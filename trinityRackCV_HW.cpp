@@ -120,7 +120,17 @@ bool trinityRackCV_HW::CVMoved(uint8_t index){
 void trinityRackCV_HW::isr_updateDAC(){
 	if(dacCount<numbDACs-1) dacCount++;
 	else dacCount=0;
-	DACWrite(dacCount,dacValues[dacCount]);
+
+	// don't send value to DAC if it hasn't changed
+	if (dacValues[dacCount] == dacValuesSent[dacCount]) return;
+
+	bit_set(LOAD_PIN);
+	SPI.transfer(dacNumber[dacCount]);
+	SPI.transfer(dacValues[dacCount]);
+	bit_clear(LOAD_PIN);
+
+	dacValuesSent[dacCount] = dacValues[dacCount];
+
 
 }
 
@@ -130,26 +140,22 @@ void trinityRackCV_HW::DACInit(){
   SPI.setClockDivider(SPI_CLOCK_DIV16);  //16MHz divided by 16 = 1MHz
   SPI.setDataMode(SPI_MODE1);  // zero based clock, data on falling edge, seems like the correct setting
   bit_clear(LOAD_PIN);
+
+  dacCount = 0;
   zeroDACs();
 }
 
 void trinityRackCV_HW::zeroDACs(){
   for (int i=0;i< 8; i++){
-    DACWrite(i,0);
+	dacCount = i;
+    dacValues[dacCount] = 0;
+    isr_updateDAC();
   }
 }
 
 
 
 
-void trinityRackCV_HW::DACWrite(unsigned char _channel, unsigned char _level) {
-
-  bit_set(LOAD_PIN);
-  SPI.transfer(dacNumber[_channel]);
-  SPI.transfer(_level);
-  bit_clear(LOAD_PIN);
-
-}
 
 
 void trinityRackCV_HW::isr_updateClockIn(){

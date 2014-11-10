@@ -13,14 +13,12 @@ class trinityRackCV_HW : public IHWLayer {
 
 
 public:
-	enum TriggerState{ON,OFF};
-
 	// sets up all the pins, timers and SPI interface
 	// call this before using any other method from this class
 	void init(void(*clockInCallback)());
 
 	/*** CV in***/
-	virtual uint8_t getCVValue(uint8_t index);
+	uint8_t getCVValue(uint8_t index);
 	uint8_t getLastCVValue(uint8_t index){return lastCVValues[index];}
 	bool CVMoved(uint8_t index);
 
@@ -87,7 +85,7 @@ private:
 	/**TIMING**/
 	uint32_t bastlCycles;
 
-	/** ClOCK IN **/
+	/** CLOCK IN **/
 	bool clockInState;
 	void (*clockInCallback)();
 
@@ -95,8 +93,8 @@ private:
 	static const uint8_t numbDACs = 8;
 	uint8_t dacCount;
 	uint8_t dacValues[numbDACs];
+	uint8_t dacValuesSent[numbDACs];
 	void DACInit();
-	void DACWrite(unsigned char _channel, unsigned char _level);
 	void zeroDACs();
 
 	/** CV in */
@@ -105,10 +103,6 @@ private:
 	uint8_t lastCVValues[numbCVs];
 	uint8_t CVCount;
 	uint8_t CVMovedHash;
-
-
-
-
 
 
 };
