@@ -87,22 +87,29 @@ private:
 	/**TIMING**/
 	uint32_t bastlCycles;
 
+	/** ClOCK IN **/
 	bool clockInState;
-	/**BUTTONS**/
+	void (*clockInCallback)();
 
-	uint8_t CVMovedHash;
+	/** CV out */
+	static const uint8_t numbDACs = 8;
 	uint8_t dacCount;
-
-	uint8_t dacValues[8];
-	uint8_t CVValues[6];
-	uint8_t lastCVValues[6];
-	uint8_t CVCount;
-
-	void zeroDACs();
+	uint8_t dacValues[numbDACs];
 	void DACInit();
 	void DACWrite(unsigned char _channel, unsigned char _level);
+	void zeroDACs();
 
-	void (*clockInCallback)();
+	/** CV in */
+	static const uint8_t numbCVs = 6;
+	uint8_t CVValues[numbCVs];
+	uint8_t lastCVValues[numbCVs];
+	uint8_t CVCount;
+	uint8_t CVMovedHash;
+
+
+
+
+
 
 };
 

@@ -11,14 +11,13 @@
 #include <shiftRegisterFast.h>
 #include <avr/pgmspace.h>
 #include <fastAnalogRead.h>
-//#include <spiShared.h>
 #include <SPI.h>
 
-//#define PIN B,5
-#define CV_MOVED_TOLERANCE 1
-//using namespace fastAnalogRead;
 
-//#include <SdFat.h>
+#define CV_MOVED_TOLERANCE 1
+
+
+
 
 // Declaration of instance (for use in interrupt service routine)
 trinityRackCV_HW hardware;
@@ -27,44 +26,30 @@ trinityRackCV_HW hardware;
 #define UINT16_MAX 65535
 #define MAX_ADDR 131067
 
-#define DACA 3
-#define DACB 15
-#define DACC 7
+const uint8_t DACA = 3;
+const uint8_t DACB = 15;
+const uint8_t DACC = 7;
+const uint8_t DACD = 1;
+const uint8_t DACE = 5;
+const uint8_t DACF = 13;
+const uint8_t DACG = 9;
+const uint8_t DACH = 11;
 
-#define DACD 1
-#define DACE 5
-#define DACF 13
+const unsigned char dacNumber[8]={DACA,DACB,DACC,DACD,DACE,DACF,DACG,DACH};
 
-#define DACG 9
-#define DACH 11
-
-unsigned char dacNumber[8]={ DACA,DACB,DACC, DACD,DACE,DACF, DACG,DACH};
-
-
-//prog_uchar colorBit[NUMBER_OF_COLORS] PROGMEM = {
-
-
-unsigned char analogPin[6]={
-  ANALOG_PIN_1, ANALOG_PIN_2, ANALOG_PIN_3,  ANALOG_PIN_4, ANALOG_PIN_5, ANALOG_PIN_6};
+const unsigned char analogPin[6]={ANALOG_PIN_1,ANALOG_PIN_2,ANALOG_PIN_3,ANALOG_PIN_4,ANALOG_PIN_5,ANALOG_PIN_6};
 
 void trinityRackCV_HW::init(void(*clockInCallback)()) {
 
 	cli();
 
-
-	bit_dir_inp(INPUT);
-
-
-
+	bit_dir_inp(CLOCK_IN_PIN);
+	bit_set(CLOCK_IN_PIN);
 
 	bit_dir_outp(LOAD_PIN);
 	//bit_dir_outp(PIN); //debug
+
 	DACInit();
-
-	bit_set(INPUT);
-
-
-
 
 	// store callback pointer for changed buttons
 	 this->clockInCallback = clockInCallback;
@@ -87,7 +72,6 @@ void trinityRackCV_HW::init(void(*clockInCallback)()) {
 
 	CVMovedHash=0;
 
-
 	sei();
 
 }
@@ -98,13 +82,10 @@ void trinityRackCV_HW::init(void(*clockInCallback)()) {
 
 
 
-/**** TRIGGER ****/
+/**** CV ****/
 void trinityRackCV_HW::setDAC(uint8_t number, uint8_t value){
 	dacValues[number]=value;
 }
-
-
-
 
 uint8_t trinityRackCV_HW::getCVValue(uint8_t index){
 	return CVValues[index];
@@ -123,7 +104,7 @@ void trinityRackCV_HW::isr_updateADC(){
 		else 							  bitWrite(CVMovedHash,CVCount,0);
 
 		CVCount++;
-		if(CVCount>=6) CVCount=0;
+		if(CVCount>=numbCVs) CVCount=0;
 
 		fastAnalogRead::connectChannel(analogPin[CVCount]);
 		fastAnalogRead::startConversion();
@@ -137,14 +118,13 @@ bool trinityRackCV_HW::CVMoved(uint8_t index){
 }
 
 void trinityRackCV_HW::isr_updateDAC(){
-	if(dacCount<7) dacCount++;
+	if(dacCount<numbDACs-1) dacCount++;
 	else dacCount=0;
 	DACWrite(dacCount,dacValues[dacCount]);
 
 }
 
 void trinityRackCV_HW::DACInit(){
- // pinMode (LOAD_PIN, OUTPUT);
   SPI.begin();
   SPI.setBitOrder(MSBFIRST);  // Most Significant bit first.
   SPI.setClockDivider(SPI_CLOCK_DIV16);  //16MHz divided by 16 = 1MHz
@@ -174,7 +154,7 @@ void trinityRackCV_HW::DACWrite(unsigned char _channel, unsigned char _level) {
 
 void trinityRackCV_HW::isr_updateClockIn(){
 	if(clockInCallback!=0){
-		bool newState=!bit_read_in(INPUT);
+		bool newState=!bit_read_in(CLOCK_IN_PIN);
 		if(newState && !clockInState) clockInCallback();
 		clockInState=newState;
 	}
@@ -193,20 +173,13 @@ uint16_t trinityRackCV_HW::getBastlCyclesPerSecond() {
 
 /**** INTERRUPT ****/
 
-ISR(TIMER2_COMPA_vect) { //56us :)
-
-
+ISR(TIMER2_COMPA_vect) {
 //	bit_set(PIN);
 	hardware.incrementBastlCycles();
 	hardware.isr_updateClockIn();
 	hardware.isr_updateADC();
 	hardware.isr_updateDAC();
-
-	//hardware.isr_updateNextLEDRow();   // ~84us
-
 //	bit_clear(PIN);
-
-
 }
 
 
