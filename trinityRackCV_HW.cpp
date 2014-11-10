@@ -79,6 +79,7 @@ void trinityRackCV_HW::init(void(*clockInCallback)()) {
 	OCR2A = (F_CPU/1024)/(updateFreq);
 	TCNT2  = 0;
 
+	// Analog Reads
 	fastAnalogRead::init(); // for analog read
 	CVCount=0;
 	fastAnalogRead::connectChannel(CVCount);
@@ -112,16 +113,20 @@ uint8_t trinityRackCV_HW::getCVValue(uint8_t index){
 void trinityRackCV_HW::isr_updateADC(){
 
 	if(fastAnalogRead::isConversionFinished()){
-	lastCVValues[CVCount]=CVValues[CVCount];
-	CVValues[CVCount]=255-(fastAnalogRead::getConversionResult()>>2);
-	int difference=(int)lastCVValues[CVCount]-CVValues[CVCount];
-	difference=abs(difference);
-	if(difference>CV_MOVED_TOLERANCE) bitWrite(CVMovedHash,CVCount,1);
-	else bitWrite(CVMovedHash,CVCount,0);
-	CVCount++;
-	if(CVCount>=6) CVCount=0;
-	fastAnalogRead::connectChannel(analogPin[CVCount]);
-	fastAnalogRead::startConversion();
+
+		lastCVValues[CVCount]=CVValues[CVCount];
+		CVValues[CVCount]=255-(fastAnalogRead::getConversionResult()>>2);
+
+		int difference=(int)lastCVValues[CVCount]-CVValues[CVCount];
+		difference=abs(difference);
+		if(difference>CV_MOVED_TOLERANCE) bitWrite(CVMovedHash,CVCount,1);
+		else 							  bitWrite(CVMovedHash,CVCount,0);
+
+		CVCount++;
+		if(CVCount>=6) CVCount=0;
+
+		fastAnalogRead::connectChannel(analogPin[CVCount]);
+		fastAnalogRead::startConversion();
 	}
 
 }
@@ -180,10 +185,6 @@ bool trinityRackCV_HW::getClockState(){
 }
 
 /**** TIMING ****/
-
-uint32_t trinityRackCV_HW::getElapsedBastlCycles() {
-	return bastlCycles;
-}
 
 uint16_t trinityRackCV_HW::getBastlCyclesPerSecond() {
 	return (F_CPU/1024)/OCR2A;
