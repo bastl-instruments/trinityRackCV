@@ -96,7 +96,7 @@ void trinityRackCV_HW::isr_updateADC(){
 	if(fastAnalogRead::isConversionFinished()){
 
 		lastCVValues[CVCount]=CVValues[CVCount];
-		CVValues[CVCount]=255-(fastAnalogRead::getConversionResult()>>2);
+		CVValues[CVCount]=(fastAnalogRead::getConversionResult()>>2);
 
 		int difference=(int)lastCVValues[CVCount]-CVValues[CVCount];
 		difference=abs(difference);

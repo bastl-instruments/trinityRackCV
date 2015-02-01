@@ -30,7 +30,7 @@ const uint8_t ANALOG_PIN_6 = 2;
 
 
 // hardware update frequency
-static const uint16_t updateFreq = 1000;
+static const uint16_t updateFreq = 2000;
 
 
 
